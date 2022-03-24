@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'catfood.apps.CatfoodConfig',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -90,6 +91,10 @@ DATABASES = {
         'PORT': env('DJANGO_DATABASE_PORT', default=''),
     }
 }
+
+CRONJOBS = [
+    ('0 0 * * *', 'catfood.naver_search.naver_shopping_search'),
+]
 
 NAVER_ID = env('NAVER_ID', default='')
 NAVER_SECRET = env('NAVER_SECRET', default='')
