@@ -14,3 +14,17 @@ class NaverProduct(models.Model):
     brand = models.CharField(max_length=100, verbose_name='브랜드')
     maker = models.CharField(max_length=100, verbose_name='제조사')
     texture = models.CharField(max_length=100, verbose_name='타입')
+
+
+class ShoppingMall(models.Model):
+    mall_name = models.CharField(max_length=100, verbose_name='쇼핑몰명')
+    mall_url = models.URLField(verbose_name='쇼핑몰 URL')
+
+
+class ProductType(models.Model):
+    type_name = models.CharField(max_length=100, verbose_name='상품 종류')
+
+
+class Brand(models.Model):
+    brand_name = models.CharField(max_length=100, verbose_name='브랜드명')
+
