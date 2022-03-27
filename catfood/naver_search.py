@@ -35,10 +35,10 @@ PRODUCT_TYPE = {
 
 
 def naver_shopping_search():
-    keywords = ["인도어"]
-    start = 1
+    keywords = [brand.name for brand in Brand.objects.all()]
     DISPLAY_COUNT = 100
     for keyword in keywords:
+        start = 1
         while True:
             encText = quote("고양이 " + keyword + " 사료")
             url = f"https://openapi.naver.com/v1/search/shop?query={encText}&display={DISPLAY_COUNT}&start={start}"
@@ -47,8 +47,8 @@ def naver_shopping_search():
                 "X-Naver-Client-Secret": settings.NAVER_SECRET
             }
             response = requests.get(url, headers=headers)
-            if start > 1000:
-                continue
+            if start > 900:
+                break
             start += DISPLAY_COUNT
             body = response.json()
             for data in body["items"]:
@@ -75,6 +75,7 @@ def naver_shopping_search():
                     naver_product.product_status = PRODUCT_TYPE[data['productType']]  # '1' - 가격 비교 상품
                     naver_product.product_type = data['category4']  # '건식사료'
                     naver_product.save()
+            print(start)
 
 
 if __name__ == '__main__':
