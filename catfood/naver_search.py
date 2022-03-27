@@ -35,12 +35,11 @@ PRODUCT_TYPE = {
 
 
 def naver_shopping_search():
-    keywords = [brand.name for brand in Brand.objects.all()]
     DISPLAY_COUNT = 100
-    for keyword in keywords:
+    for keyword in Brand.objects.all():
         start = 1
         while True:
-            encText = quote("고양이 " + keyword + " 사료")
+            encText = quote("고양이 " + keyword.name + " 사료")
             url = f"https://openapi.naver.com/v1/search/shop?query={encText}&display={DISPLAY_COUNT}&start={start}"
             headers = {
                 "X-Naver-Client-Id": settings.NAVER_ID,
@@ -65,6 +64,8 @@ def naver_shopping_search():
                     if data['brand']:  # '캐츠랑'
                         brand = Brand.objects.get_or_create(name=data['brand'])[0]
                         naver_product.brand = brand
+                    else:
+                        naver_product.brand = keyword
                     if data['maker']:  # '대주산업'
                         maker = Maker.objects.get_or_create(name=data['maker'])[0]
                         if naver_product.brand:
