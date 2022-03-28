@@ -6,6 +6,7 @@ from django.db import models
 class ProductType(models.TextChoices):
     DRY = '건식사료', 'Dry'
     WET = '습식사료', 'Wet'
+    FROZEN_DRY = '동결건조 사료', 'Frozen-Dry'
 
 
 class ProductStatus(models.TextChoices):

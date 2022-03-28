@@ -16,25 +16,23 @@ if 'setup' in dir(django):
     django.setup()
 
 from catfood.models import NaverProduct, ShoppingMall, Brand, Maker
-from django.db.utils import IntegrityError
-
-PRODUCT_TYPE = {
-    '1': "일반상품",
-    '2': "일반상품",
-    '3': "일반상품",
-    '4': "중고상품",
-    '5': "중고상품",
-    '6': "중고상품",
-    '7': "단종상품",
-    '8': "단종상품",
-    '9': "단종상품",
-    '10': "예정상품",
-    '11': "예정상품",
-    '12': "예정상품",
-}
 
 
 def naver_shopping_search():
+    PRODUCT_TYPE = {
+        '1': "일반상품",
+        '2': "일반상품",
+        '3': "일반상품",
+        '4': "중고상품",
+        '5': "중고상품",
+        '6': "중고상품",
+        '7': "단종상품",
+        '8': "단종상품",
+        '9': "단종상품",
+        '10': "예정상품",
+        '11': "예정상품",
+        '12': "예정상품",
+    }
     DISPLAY_COUNT = 100
     for keyword in Brand.objects.all():
         start = 1
@@ -46,7 +44,7 @@ def naver_shopping_search():
                 "X-Naver-Client-Secret": settings.NAVER_SECRET
             }
             response = requests.get(url, headers=headers)
-            if start > 900:
+            if start > 1000:
                 break
             start += DISPLAY_COUNT
             body = response.json()
@@ -72,11 +70,110 @@ def naver_shopping_search():
                             naver_product.brand.maker = maker
                             naver_product.brand.save()
                     if data["mallName"]:
-                        naver_product.shopping_mall = ShoppingMall.objects.get_or_create(name=data['mallName'])[0]  # '네이버'
+                        naver_product.shopping_mall = ShoppingMall.objects.get_or_create(name=data['mallName'])[
+                            0]  # '네이버'
                     naver_product.product_status = PRODUCT_TYPE[data['productType']]  # '1' - 가격 비교 상품
                     naver_product.product_type = data['category4']  # '건식사료'
                     naver_product.save()
             print(start)
+
+
+def exclude_product():
+    keywords = dict()
+    for product in NaverProduct.objects.all():
+        product.title = product.title\
+            .replace("[", " ")\
+            .replace("]", " ")\
+            .replace("(", " ")\
+            .replace(")", " ")\
+            .replace("/", " ")\
+            .replace("-", " ")\
+            .replace("+", " ")\
+            .replace("_", " ")\
+            .replace("#", " ")\
+            .replace("!", " ")\
+            .replace("@", " ")\
+            .replace("$", " ")\
+            .replace("*", " ")\
+            .replace("~", " ")\
+            .replace(",", " ")\
+            .replace("&gt", " ")\
+            .replace("&lt", " ")\
+            .replace("&amp;", "&")\
+            .replace("  ", " ")\
+            .replace("  ", " ")\
+            .replace("  ", " ")
+        product.save()
+        for keyword in product.title.split():
+            if keyword in keywords.keys():
+                keywords[keyword] += 1
+            else:
+                keywords[keyword] = 1
+    keywords = sorted(keywords.items(), key=lambda x: x[1], reverse=True)
+    keywords = [keyword[0] for keyword in keywords if keyword[1] == 1]
+    with open('exclude_keywords_01.csv', 'w', encoding='utf-8', newline="") as f:
+        for keyword in keywords:
+            f.write(f'"{keyword}", ""\n')
+
+
+def not_related_product():
+    keywords = ["강아지", "화장실", "모래", "개사료", "하우스", "배변", "낚시대", "장난감", "진도", "리트리버", "츄르", "간식", "길냥이"]
+    for product in NaverProduct.objects.all():
+        if any(keyword in product.title for keyword in keywords):
+            print(product.title)
+            product.delete()
+        if not product.product_type:
+            print(product.title)
+            product.delete()
+
+
+def make_word_spaces_for_titles():
+    for product in NaverProduct.objects.all():
+        product.title = product.title\
+            .replace("치킨", " 치킨 ")\
+            .replace("닭간", " 닭간 ")\
+            .replace("닭고기", " 닭고기 ")\
+            .replace("참치", " 참치 ")\
+            .replace("연어", " 연어 ")\
+            .replace("흰살생선", " 흰살생선 ")\
+            .replace("흰생선", " 흰살생선 ")\
+            .replace("생선", " 생선 ")\
+            .replace("피쉬", " 피쉬 ")\
+            .replace("소고기", " 소고기 ")\
+            .replace("소간", " 소간")\
+            .replace("고양이", " 고양이 ")\
+            .replace("캣", " 캣 ")\
+            .replace("사료", " 사료 ")\
+            .replace("Ai ia", "Aixia")\
+            .replace("AI IA", "AIXIA")\
+            .replace("  ", " ")\
+            .replace("  ", " ")\
+            .replace("  ", " ")
+        product.save()
+
+
+def remove_word_spaces_for_titles():
+    dictionary = dict()
+    with open('exclude_keywords.csv', 'r', encoding='utf-8') as f:
+        import csv
+        reader = csv.reader(f)
+        for key, value in reader:
+            dictionary[key] = value
+
+    for product in NaverProduct.objects.all():
+        product.title = product.title\
+            .replace("{", "")\
+            .replace("}", "")\
+            .replace("[", "")\
+            .replace("]", "")\
+            .replace("UnKnown", "")\
+            .replace("unknown", "")\
+            .replace("KG", "kg")\
+            .replace("EA", "ea")
+        for key, value in dictionary.items():
+            product.title = product.title.replace(key, value)
+        product.save()
+        print(product.title)
 
 
 if __name__ == '__main__':
