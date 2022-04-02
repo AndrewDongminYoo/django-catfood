@@ -15,7 +15,7 @@ from django_catfood import settings
 if 'setup' in dir(django):
     django.setup()
 
-from catfood.models import NaverProduct, ShoppingMall, Brand, Maker
+from catfood.models import NaverProduct, ShoppingMall, Brand
 
 
 def naver_shopping_search():
@@ -34,17 +34,18 @@ def naver_shopping_search():
         '12': "예정상품",
     }
     DISPLAY_COUNT = 100
-    for keyword in Brand.objects.all():
+    brand_list = [brand for brand in Brand.objects.all() if NaverProduct.objects.filter(brand=brand).count() < 20]
+    for brand in brand_list:
         start = 1
         while True:
-            encText = quote("고양이 " + keyword.korean_name + " 사료")
+            encText = quote("고양이 " + brand.korean_name + " 사료")
             url = f"https://openapi.naver.com/v1/search/shop?query={encText}&display={DISPLAY_COUNT}&start={start}"
             headers = {
                 "X-Naver-Client-Id": settings.NAVER_ID,
                 "X-Naver-Client-Secret": settings.NAVER_SECRET
             }
             response = requests.get(url, headers=headers)
-            if start > 1000:
+            if start > 600:
                 break
             start += DISPLAY_COUNT
             body = response.json()
@@ -59,7 +60,7 @@ def naver_shopping_search():
                     naver_product.link = data['link']
                     naver_product.image_url = data['image']
                     naver_product.low_price = data['lprice']  # '5690'
-                    naver_product.brand = keyword
+                    naver_product.brand = brand if brand.korean_name in naver_product.title else None
                     if data["mallName"]:
                         naver_product.shopping_mall = ShoppingMall.objects.get_or_create(name=data['mallName'])[
                             0]  # '네이버'
@@ -165,4 +166,5 @@ def find_brand():
 
 
 if __name__ == '__main__':
+    naver_shopping_search()
     find_brand()
