@@ -37,7 +37,7 @@ def naver_shopping_search():
     for keyword in Brand.objects.all():
         start = 1
         while True:
-            encText = quote("고양이 " + keyword.name + " 사료")
+            encText = quote("고양이 " + keyword.korean_name + " 사료")
             url = f"https://openapi.naver.com/v1/search/shop?query={encText}&display={DISPLAY_COUNT}&start={start}"
             headers = {
                 "X-Naver-Client-Id": settings.NAVER_ID,
@@ -59,16 +59,7 @@ def naver_shopping_search():
                     naver_product.link = data['link']
                     naver_product.image_url = data['image']
                     naver_product.low_price = data['lprice']  # '5690'
-                    if data['brand']:  # '캐츠랑'
-                        brand = Brand.objects.get_or_create(name=data['brand'])[0]
-                        naver_product.brand = brand
-                    else:
-                        naver_product.brand = keyword
-                    if data['maker']:  # '대주산업'
-                        maker = Maker.objects.get_or_create(name=data['maker'])[0]
-                        if naver_product.brand:
-                            naver_product.brand.maker = maker
-                            naver_product.brand.save()
+                    naver_product.brand = keyword
                     if data["mallName"]:
                         naver_product.shopping_mall = ShoppingMall.objects.get_or_create(name=data['mallName'])[
                             0]  # '네이버'
@@ -78,51 +69,54 @@ def naver_shopping_search():
             print(start)
 
 
-def exclude_product():
+def extract_brand():
     keywords = dict()
     for product in NaverProduct.objects.all():
-        product.title = product.title\
-            .replace("[", " ")\
-            .replace("]", " ")\
-            .replace("(", " ")\
-            .replace(")", " ")\
-            .replace("/", " ")\
-            .replace("-", " ")\
-            .replace("+", " ")\
-            .replace("_", " ")\
-            .replace("#", " ")\
-            .replace("!", " ")\
-            .replace("@", " ")\
-            .replace("$", " ")\
-            .replace("*", " ")\
-            .replace("~", " ")\
-            .replace(",", " ")\
-            .replace("&gt", " ")\
-            .replace("&lt", " ")\
-            .replace("&amp;", "&")\
-            .replace("  ", " ")\
-            .replace("  ", " ")\
-            .replace("  ", " ")
-        product.save()
-        for keyword in product.title.split():
-            if keyword in keywords.keys():
-                keywords[keyword] += 1
-            else:
-                keywords[keyword] = 1
+        # product.title = product.title\
+        #     .replace("[", " ")\
+        #     .replace("]", " ") \
+        #     .replace("{", " ") \
+        #     .replace("}", " ") \
+        #     .replace("(", " ")\
+        #     .replace(")", " ")\
+        #     .replace("/", " ")\
+        #     .replace("-", " ")\
+        #     .replace("+", " ")\
+        #     .replace("_", " ")\
+        #     .replace("#", " ")\
+        #     .replace("!", " ")\
+        #     .replace("@", " ")\
+        #     .replace("$", " ")\
+        #     .replace("*", " ")\
+        #     .replace("~", " ")\
+        #     .replace(",", " ")\
+        #     .replace("&gt", " ")\
+        #     .replace("&lt", " ")\
+        #     .replace("&amp;", "&")\
+        #     .replace("  ", " ")\
+        #     .replace("  ", " ")\
+        #     .replace("  ", " ")
+        # product.save()
+        keyword_list = product.title.split()
+        if keyword_list[0] in keywords.keys():
+            keywords[keyword_list[0]] += 1
+        else:
+            keywords[keyword_list[0]] = 1
     keywords = sorted(keywords.items(), key=lambda x: x[1], reverse=True)
     keywords = [keyword[0] for keyword in keywords if keyword[1] == 1]
-    with open('exclude_keywords_01.csv', 'w', encoding='utf-8', newline="") as f:
+    print(keywords)
+    with open('exclude.csv', 'w', encoding='utf-8', newline="") as f:
         for keyword in keywords:
             f.write(f'"{keyword}", ""\n')
 
 
 def not_related_product():
-    keywords = ["강아지", "화장실", "모래", "개사료", "하우스", "배변", "낚시대", "장난감", "진도", "리트리버", "츄르", "간식", "길냥이"]
+    keywords = ["강아지", "화장실", "모래", "개사료", "하우스", "배변", "낚시대", "장난감", "진도", "리트리버", "츄르", "간식"]
     for product in NaverProduct.objects.all():
         if any(keyword in product.title for keyword in keywords):
             print(product.title)
             product.delete()
-        if not product.product_type:
+        elif not product.product_type:
             print(product.title)
             product.delete()
 
@@ -140,41 +134,35 @@ def make_word_spaces_for_titles():
             .replace("생선", " 생선 ")\
             .replace("피쉬", " 피쉬 ")\
             .replace("소고기", " 소고기 ")\
-            .replace("소간", " 소간")\
-            .replace("고양이", " 고양이 ")\
+            .replace("소간", " 소간 ")\
+            .replace("고양이", "")\
             .replace("캣", " 캣 ")\
             .replace("사료", " 사료 ")\
-            .replace("Ai ia", "Aixia")\
-            .replace("AI IA", "AIXIA")\
             .replace("  ", " ")\
             .replace("  ", " ")\
-            .replace("  ", " ")
+            .replace("  ", " ")\
+            .replace("& 39;", "'")\
+            .strip()
         product.save()
 
 
-def remove_word_spaces_for_titles():
-    dictionary = dict()
-    with open('exclude_keywords.csv', 'r', encoding='utf-8') as f:
-        import csv
-        reader = csv.reader(f)
-        for key, value in reader:
-            dictionary[key] = value
-
-    for product in NaverProduct.objects.all():
-        product.title = product.title\
-            .replace("{", "")\
-            .replace("}", "")\
-            .replace("[", "")\
-            .replace("]", "")\
-            .replace("UnKnown", "")\
-            .replace("unknown", "")\
-            .replace("KG", "kg")\
-            .replace("EA", "ea")
-        for key, value in dictionary.items():
-            product.title = product.title.replace(key, value)
-        product.save()
-        print(product.title)
+def find_brand():
+    for BRAND in Brand.objects.all():
+        NaverProduct.objects.filter(brand=None, title__contains=BRAND.korean_name).update(brand=BRAND)
+    BRAND_LIST = [brand.korean_name for brand in Brand.objects.all()]
+    for BRAND in BRAND_LIST:
+        print(BRAND)
+    for product in NaverProduct.objects.filter(brand=None):
+        brand = product.title.split()
+        if any(brand) in BRAND_LIST:
+            for b in brand:
+                if b in BRAND_LIST:
+                    product.brand = Brand.objects.get(korean_name=b)
+                    product.save()
+                    break
+        else:
+            print(brand, False)
 
 
 if __name__ == '__main__':
-    naver_shopping_search()
+    find_brand()

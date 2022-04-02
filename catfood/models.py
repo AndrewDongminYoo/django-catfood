@@ -7,6 +7,7 @@ class ProductType(models.TextChoices):
     DRY = '건식사료', 'Dry'
     WET = '습식사료', 'Wet'
     FROZEN_DRY = '동결건조 사료', 'Frozen-Dry'
+    MILK = '분유/우유', 'Baby Milk'
 
 
 class ProductStatus(models.TextChoices):
@@ -32,11 +33,13 @@ class Maker(models.Model):
 
 
 class Brand(models.Model):
-    name = models.CharField(max_length=50)
+    english_name = models.CharField(max_length=50)
+    korean_name = models.CharField(max_length=50)
     maker = models.ForeignKey(Maker, null=True, blank=True, on_delete=models.CASCADE, verbose_name='제조사')
+    url = models.URLField(null=True, blank=True, verbose_name='사이트 URL')
 
     def __str__(self):
-        return self.name
+        return self.korean_name
 
 
 class NaverProduct(models.Model):
