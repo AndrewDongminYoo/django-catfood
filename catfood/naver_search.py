@@ -161,8 +161,9 @@ def find_brand():
                     product.brand = Brand.objects.get(korean_name=b)
                     product.save()
                     break
+            print(product.title, True)
         else:
-            print(brand, False)
+            print(product.title, False)
 
 
 if __name__ == '__main__':
