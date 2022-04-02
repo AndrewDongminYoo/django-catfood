@@ -45,10 +45,10 @@ def naver_shopping_search():
                 "X-Naver-Client-Secret": settings.NAVER_SECRET
             }
             response = requests.get(url, headers=headers)
-            if start > 600:
-                break
             start += DISPLAY_COUNT
             body = response.json()
+            if start > 600 or not len(body["items"]):
+                break
             for data in body["items"]:
                 print(data)
                 if data['category3'] == "고양이 사료":
@@ -166,5 +166,4 @@ def find_brand():
 
 
 if __name__ == '__main__':
-    naver_shopping_search()
     find_brand()

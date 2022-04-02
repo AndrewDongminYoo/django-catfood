@@ -37,6 +37,7 @@ class Brand(models.Model):
     korean_name = models.CharField(max_length=50)
     maker = models.ForeignKey(Maker, null=True, blank=True, on_delete=models.CASCADE, verbose_name='제조사')
     url = models.URLField(null=True, blank=True, verbose_name='사이트 URL')
+    is_available = models.BooleanField(default=False, verbose_name='판매 여부')
 
     def __str__(self):
         return self.korean_name
