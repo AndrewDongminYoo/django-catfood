@@ -6,6 +6,10 @@ from urllib.parse import quote
 from selenium.webdriver.chrome import webdriver
 from urllib.parse import urljoin, urlparse
 import requests
+from selenium.webdriver.common.by import By
+from bs4 import BeautifulSoup
+from selenium.common.exceptions import InvalidArgumentException
+from selenium.common.exceptions import StaleElementReferenceException
 
 sys.path.append('/home/ubuntu/django_catfood')
 os.environ.setdefault("PYTHONUNBUFFERED;", "1")
@@ -16,7 +20,7 @@ from django_catfood import settings
 if 'setup' in dir(django):
     django.setup()
 
-from catfood.models import Brand, ListSelector
+from catfood.models import Brand, ListSelector, Formula
 
 
 def get_brand_list():
@@ -29,17 +33,37 @@ def get_brand_list():
             selector.save()
 
 
-def get_urls_list():
-    for selector in ListSelector.objects.all():
-        pattern = selector.product_path
-        pattern = "^"+pattern.replace("**", ".+")+"$"
-        brand = Brand.objects.get(english_name=selector.title)
-        if re.compile(pattern).fullmatch(brand.url):
-            print(re.compile(pattern).fullmatch(brand.url).group())
-        else:
-            print("shit")
-        # break
+def google_searching():
+    def regex_url(url_regex, target_url):
+        pat = "^" + url_regex.replace("**", "[a-zA-Z0-9#?=]+") + "$"
+        regex = re.compile(pat)
+        if regex.match(target_url):
+            return regex.match(target_url).group(0)
+
+    def find_all_urls(w_driver: webdriver.WebDriver, url_string: str):
+        try:
+            w_driver.get(url_string)
+        except InvalidArgumentException as e:
+            print(e.msg)
+        try:
+            return [link.get_attribute("href") for link in w_driver.find_elements(By.CSS_SELECTOR, "a")]
+        except StaleElementReferenceException as e:
+            print(e.msg)
+            soup = BeautifulSoup(w_driver.page_source, "html.parser")
+            return [link.get("href") for link in soup.find_all("a")]
+
+    with webdriver.WebDriver() as driver:
+        for brand in ListSelector.objects.all():
+            pattern = brand.product_path
+            all_urls = find_all_urls(driver, brand.base_url)
+            print(all_urls)
+            for url in all_urls:
+                if url and regex_url(pattern, url):
+                    Formula.objects.get_or_create(
+                        brand=Brand.objects.get(english_name=brand.title),
+                        product_url=url
+                    )
 
 
 if __name__ == '__main__':
-    get_urls_list()
+    google_searching()

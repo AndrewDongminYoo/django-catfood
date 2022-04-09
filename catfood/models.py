@@ -57,19 +57,13 @@ class NaverProduct(models.Model):
     product_type = models.CharField(max_length=100, verbose_name='타입')
 
 
-# class Selector(models.Model):
-#     brand = models.ForeignKey(Brand, null=True, blank=True, on_delete=models.CASCADE, verbose_name='브랜드명')
-#     title = models.TextField(verbose_name='상품명 선택자')
-#     description = models.TextField(verbose_name='상품 설명 선택자')
-#     key_benefit = models.TextField(verbose_name='혜택 선택자')
-#     ingredients = models.TextField(verbose_name='성분 선택자')
-#     analysis = models.TextField(verbose_name='등록 성분 선택자')
-#     additives = models.TextField(verbose_name='추가 성분 선택자')
-#     url = models.URLField(verbose_name='상품 베이스 URL')
-
-
 class ListSelector(models.Model):
     brand = models.ForeignKey(Brand, null=True, blank=True, on_delete=models.CASCADE, verbose_name='브랜드명')
     base_url = models.URLField(verbose_name='상품 베이스 URL')
     title = models.TextField(verbose_name='상품명 선택자')
     product_path = models.TextField(verbose_name='상품 선택자')
+
+
+class Formula(models.Model):
+    brand = models.ForeignKey(Brand, null=True, blank=True, on_delete=models.CASCADE, verbose_name='브랜드명')
+    product_url = models.URLField(verbose_name='상품 URL')
