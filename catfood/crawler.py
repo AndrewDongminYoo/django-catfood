@@ -47,6 +47,7 @@ def find_all_urls(w_driver: webdriver.WebDriver, url_string: str):
         w_driver.get(url_string)
     except InvalidArgumentException as e:
         print(e.msg)
+    w_driver.find_elements(By.CSS_SELECTOR, "a")
     soup = BeautifulSoup(w_driver.page_source, "html.parser")
     return [link.get("href") for link in soup.find_all("a")]
 
@@ -86,6 +87,7 @@ def collect_urls_by_patterns():
             for formula in formulas:
                 try:
                     if regex_url(selector.product_path, formula):
+                        formula = formula.split("#")[0]
                         Formula.objects.get_or_create(
                             brand=target,
                             product_url=formula
@@ -93,6 +95,7 @@ def collect_urls_by_patterns():
                     all_urls = find_all_urls(driver, formula)
                     for url in all_urls:
                         if url and regex_url(selector.product_path, url):
+                            url = url.split("#")[0]
                             formulas.append(url) if url not in formulas else None
                             print(url)
                             Formula.objects.get_or_create(
@@ -105,9 +108,8 @@ def collect_urls_by_patterns():
 
 
 def search_crawler():
-    for brand in ListSelector.objects.all():
+    for brand in ListSelector.objects.all().order_by("id"):
         driver = webdriver.WebDriver()
-        driver.maximize_window()
         driver.implicitly_wait(10)
         pattern = brand.product_path
         base_urls = [brand.base_url]
@@ -115,9 +117,12 @@ def search_crawler():
             driver.get(b_url)
             time.sleep(3)
             try:
-                all_urls = [ele.get_attribute("href") for ele in driver.find_elements(By.CSS_SELECTOR, "a")]
+                driver.find_elements(By.CSS_SELECTOR, "a")
+                soup = BeautifulSoup(driver.page_source, "html.parser")
+                all_urls = [link.get("href") for link in soup.find_all("a")]
                 for url in all_urls:
                     if regex_url(pattern, url):
+                        url = url.split("#")[0]
                         base_urls.append(url) if url not in base_urls else None
                         print(url)
                         Formula.objects.get_or_create(
@@ -141,4 +146,4 @@ def set_base_url_for_crawler():
 
 
 if __name__ == '__main__':
-    set_base_url_for_crawler()
+    search_crawler()
