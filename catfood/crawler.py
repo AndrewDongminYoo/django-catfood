@@ -2,22 +2,20 @@
 import os
 import re
 import sys
-from urllib.parse import quote
-from selenium.webdriver.chrome import webdriver
-from urllib.parse import urljoin, urlparse
-import requests
-from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
-from selenium.common.exceptions import InvalidArgumentException, NoSuchElementException
-from selenium.common.exceptions import StaleElementReferenceException
-from data import result
 import time
+
+from bs4 import BeautifulSoup
+from selenium.common.exceptions import InvalidArgumentException
+from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.chrome import webdriver
+from selenium.webdriver.common.by import By
+
+from catfood.data import result
 
 sys.path.append('/home/ubuntu/django_catfood')
 os.environ.setdefault("PYTHONUNBUFFERED;", "1")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_catfood.settings")
 import django
-from django_catfood import settings
 
 if 'setup' in dir(django):
     django.setup()
@@ -49,12 +47,8 @@ def find_all_urls(w_driver: webdriver.WebDriver, url_string: str):
         w_driver.get(url_string)
     except InvalidArgumentException as e:
         print(e.msg)
-    try:
-        return [link.get_attribute("href") for link in w_driver.find_elements(By.CSS_SELECTOR, "a")]
-    except StaleElementReferenceException as e:
-        print(e.msg)
-        soup = BeautifulSoup(w_driver.page_source, "html.parser")
-        return [link.get("href") for link in soup.find_all("a")]
+    soup = BeautifulSoup(w_driver.page_source, "html.parser")
+    return [link.get("href") for link in soup.find_all("a")]
 
 
 def search_urls_by_patterns():
@@ -113,12 +107,13 @@ def collect_urls_by_patterns():
 def search_crawler():
     for brand in ListSelector.objects.all():
         driver = webdriver.WebDriver()
+        driver.maximize_window()
         driver.implicitly_wait(10)
         pattern = brand.product_path
         base_urls = [brand.base_url]
         for b_url in base_urls:
             driver.get(b_url)
-            time.sleep(1)
+            time.sleep(3)
             try:
                 all_urls = [ele.get_attribute("href") for ele in driver.find_elements(By.CSS_SELECTOR, "a")]
                 for url in all_urls:
@@ -134,5 +129,16 @@ def search_crawler():
         driver.quit()
 
 
+def set_base_url_for_crawler():
+    with webdriver.WebDriver() as driver:
+        driver.maximize_window()
+        for selector in ListSelector.objects.filter(base_url=""):
+            print(selector.product_path)
+            driver.get(selector.product_path.replace("**", ""))
+            x = input(f"{selector.title} ")
+            selector.base_url = driver.current_url
+            selector.save()
+
+
 if __name__ == '__main__':
-    collect_urls_by_patterns()
+    set_base_url_for_crawler()

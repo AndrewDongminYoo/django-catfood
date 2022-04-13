@@ -63,6 +63,9 @@ class ListSelector(models.Model):
     title = models.TextField(verbose_name='상품명 선택자')
     product_path = models.TextField(verbose_name='상품 선택자')
 
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        super().save(force_insert, force_update, using, update_fields)
+
 
 class Formula(models.Model):
     brand = models.ForeignKey(Brand, null=True, blank=True, on_delete=models.CASCADE, verbose_name='브랜드명')
