@@ -6,7 +6,6 @@ import time
 
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import InvalidArgumentException
-from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.chrome import webdriver
 from selenium.webdriver.common.by import By
 
@@ -145,5 +144,13 @@ def set_base_url_for_crawler():
             selector.save()
 
 
+def set_title_for_formulas():
+    with webdriver.WebDriver() as driver:
+        for formula in Formula.objects.filter(title=""):
+            driver.get(formula.product_url)
+            formula.title = driver.title
+            formula.save()
+
+
 if __name__ == '__main__':
-    search_crawler()
+    set_title_for_formulas()

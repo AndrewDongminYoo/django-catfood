@@ -20,18 +20,10 @@ from catfood.models import NaverProduct, ShoppingMall, Brand
 
 def naver_shopping_search():
     PRODUCT_TYPE = {
-        '1': "일반상품",
-        '2': "일반상품",
-        '3': "일반상품",
-        '4': "중고상품",
-        '5': "중고상품",
-        '6': "중고상품",
-        '7': "단종상품",
-        '8': "단종상품",
-        '9': "단종상품",
-        '10': "예정상품",
-        '11': "예정상품",
-        '12': "예정상품",
+        '1':  "일반상품", '2':  "일반상품", '3':  "일반상품",
+        '4':  "중고상품", '5':  "중고상품", '6':  "중고상품",
+        '7':  "단종상품", '8':  "단종상품", '9':  "단종상품",
+        '10': "예정상품", '11': "예정상품", '12': "예정상품",
     }
     DISPLAY_COUNT = 100
     brand_list = [brand for brand in Brand.objects.all() if NaverProduct.objects.filter(brand=brand).count() < 20]
@@ -73,31 +65,6 @@ def naver_shopping_search():
 def extract_brand():
     keywords = dict()
     for product in NaverProduct.objects.all():
-        # product.title = product.title\
-        #     .replace("[", " ")\
-        #     .replace("]", " ") \
-        #     .replace("{", " ") \
-        #     .replace("}", " ") \
-        #     .replace("(", " ")\
-        #     .replace(")", " ")\
-        #     .replace("/", " ")\
-        #     .replace("-", " ")\
-        #     .replace("+", " ")\
-        #     .replace("_", " ")\
-        #     .replace("#", " ")\
-        #     .replace("!", " ")\
-        #     .replace("@", " ")\
-        #     .replace("$", " ")\
-        #     .replace("*", " ")\
-        #     .replace("~", " ")\
-        #     .replace(",", " ")\
-        #     .replace("&gt", " ")\
-        #     .replace("&lt", " ")\
-        #     .replace("&amp;", "&")\
-        #     .replace("  ", " ")\
-        #     .replace("  ", " ")\
-        #     .replace("  ", " ")
-        # product.save()
         keyword_list = product.title.split()
         if keyword_list[0] in keywords.keys():
             keywords[keyword_list[0]] += 1
@@ -112,7 +79,7 @@ def extract_brand():
 
 
 def not_related_product():
-    keywords = ["강아지", "화장실", "모래", "개사료", "하우스", "배변", "낚시대", "장난감", "진도", "리트리버", "츄르", "간식"]
+    keywords = ["강아지", "화장실", "모래", "개사료", "하우스", "배변", "낚시대", "장난감", "츄르", "간식", "산책"]
     for product in NaverProduct.objects.all():
         if any(keyword in product.title for keyword in keywords):
             print(product.title)
@@ -120,31 +87,6 @@ def not_related_product():
         elif not product.product_type:
             print(product.title)
             product.delete()
-
-
-def make_word_spaces_for_titles():
-    for product in NaverProduct.objects.all():
-        product.title = product.title\
-            .replace("치킨", " 치킨 ")\
-            .replace("닭간", " 닭간 ")\
-            .replace("닭고기", " 닭고기 ")\
-            .replace("참치", " 참치 ")\
-            .replace("연어", " 연어 ")\
-            .replace("흰살생선", " 흰살생선 ")\
-            .replace("흰생선", " 흰살생선 ")\
-            .replace("생선", " 생선 ")\
-            .replace("피쉬", " 피쉬 ")\
-            .replace("소고기", " 소고기 ")\
-            .replace("소간", " 소간 ")\
-            .replace("고양이", "")\
-            .replace("캣", " 캣 ")\
-            .replace("사료", " 사료 ")\
-            .replace("  ", " ")\
-            .replace("  ", " ")\
-            .replace("  ", " ")\
-            .replace("& 39;", "'")\
-            .strip()
-        product.save()
 
 
 def find_brand():

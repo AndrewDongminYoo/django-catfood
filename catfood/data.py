@@ -1339,10 +1339,11 @@ result["ZiwiPeak"] = [
 ]
 
 if __name__ == "__main__":
-
+    count = 0
     for brand, items in result.items():
-        for item in items:
-            print(brand, item)
+        print(brand, len(items))
+        count += len(items)
+    print(count)
     # count = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 23, 24, 33, 42, 43]
     # new_dict = {}
     # for key, value in result.items():

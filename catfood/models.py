@@ -69,4 +69,5 @@ class ListSelector(models.Model):
 
 class Formula(models.Model):
     brand = models.ForeignKey(Brand, null=True, blank=True, on_delete=models.CASCADE, verbose_name='브랜드명')
+    title = models.CharField(max_length=200, null=True, blank=True, verbose_name='상품명')
     product_url = models.URLField(verbose_name='상품 URL')
