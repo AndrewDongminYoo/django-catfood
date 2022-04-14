@@ -4,7 +4,9 @@ import re
 import sys
 import time
 
+import requests
 from bs4 import BeautifulSoup
+from requests import Response
 from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.chrome import webdriver
 from selenium.webdriver.common.by import By
@@ -145,11 +147,26 @@ def set_base_url_for_crawler():
 
 
 def set_title_for_formulas():
-    with webdriver.WebDriver() as driver:
-        for formula in Formula.objects.filter(title=""):
-            driver.get(formula.product_url)
-            formula.title = driver.title
+    for formula in Formula.objects.filter(title="").order_by("brand_id"):
+        try:
+            req: Response = requests.get(formula.product_url)
+            title: str = BeautifulSoup(req.text, "html.parser").title.text
+            if "403 Forbidden" in title:
+                raise Exception("403 Forbidden")
+            elif "410 Gone" in title:
+                raise Exception("410 Gone")
+            elif "찾을 수 없음" in title or "not found" in title or "404" in title:
+                raise Exception("No Product")
+            elif Formula.objects.get(title=title):
+                raise Exception("Already Exist")
+            formula.title = title.replace("\n", " ").replace("&nbsp", " ").strip()
+            print(formula.title)
             formula.save()
+        except Exception as e:
+            if e.__class__.__name__ == "Exception":
+                print(f"[ERROR] {e}", formula.product_url)
+            else:
+                print(f"[ERROR] {e.__class__.__name__}", formula.product_url)
 
 
 if __name__ == '__main__':
