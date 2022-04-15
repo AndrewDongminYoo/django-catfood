@@ -173,5 +173,15 @@ def set_title_for_formulas():
                     print(f"[ERROR] {e.__class__.__name__}", formula.product_url)
 
 
+def set_selector_for_formula():
+    with webdriver.WebDriver() as driver:
+        driver.implicitly_wait(10)
+        for brand in ListSelector.objects.filter(ingredients_selector=""):
+            driver.get(brand.base_url)
+            ingredient = input(f"{brand.title} ingredients path.").strip()
+            brand.ingredients_selector = ingredient
+            brand.save()
+
+
 if __name__ == '__main__':
-    set_title_for_formulas()
+    set_selector_for_formula()
