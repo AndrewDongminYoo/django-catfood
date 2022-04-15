@@ -153,7 +153,8 @@ def set_title_for_formulas():
         for formula in Formula.objects.filter(title="").order_by("brand_id"):
             try:
                 driver.get(url=formula.product_url)
-                title: str = driver.find_element(By.CSS_SELECTOR, "h1").text
+                title: str = driver.find_element(By.CSS_SELECTOR, "h1").text.replace("\\n", " ")
+                title_str = f'{title.replace("&nbsp", " ").strip()} | {formula.brand.english_name}'
                 if "403 Forbidden" in title:
                     raise Exception("403 Forbidden")
                 elif "410 Gone" in title:
@@ -162,7 +163,7 @@ def set_title_for_formulas():
                     raise Exception("No Product")
                 elif Formula.objects.filter(title=title).exists():
                     raise Exception("Already Exist")
-                formula.title = title.replace("\n", " ").replace("&nbsp", " ").strip() + " | " + formula.brand.english_name
+                formula.title = title_str
                 print(formula.title)
                 formula.save()
             except Exception as e:
