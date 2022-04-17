@@ -6,6 +6,7 @@ import time
 
 import requests
 from bs4 import BeautifulSoup
+from django.db.models import Q
 from requests import Response
 from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.chrome import webdriver
@@ -183,5 +184,43 @@ def set_selector_for_formula():
             brand.save()
 
 
+def set_ingredients_for_all():
+    pass_list = []
+    with webdriver.WebDriver() as driver:
+        driver.implicitly_wait(10)
+        driver.maximize_window()
+        for formula in Formula.objects.filter(Q(ingredients=None) | Q(ingredients="")).order_by("brand"):
+            try:
+                if formula.brand in pass_list:
+                    continue
+                driver.get(formula.product_url)
+                selector = ListSelector.objects.get(brand=formula.brand)
+                soup = BeautifulSoup(driver.page_source, "html.parser")
+                new_ingredients_selector = input().strip()
+                if new_ingredients_selector == "delete":
+                    formula.delete()
+                    continue
+                elif new_ingredients_selector == "pass":
+                    pass_list.append(formula.brand)
+                    continue
+                elif new_ingredients_selector.startswith("/"):
+                    formula.ingredients = new_ingredients_selector[1:]
+                    formula.save()
+                    continue
+                elif new_ingredients_selector:
+                    selector.ingredients_selector = new_ingredients_selector
+                    selector.save()
+                ingredients = soup.select(selector.ingredients_selector)
+                ingredients = [ingredient.text.strip() for ingredient in ingredients]
+                ingredient = ", ".join(ingredients)
+                ingredient = re.sub(r"\s+", " ", ingredient.strip())
+                ingredient = re.sub("(composition|ingredients?):? ?", "", ingredient, flags=re.IGNORECASE)
+                formula.ingredients = ingredient
+                print(formula.ingredients)
+                formula.save()
+            except Exception as e:
+                print(f"[ERROR] {e}", formula.product_url)
+
+
 if __name__ == '__main__':
-    set_selector_for_formula()
+    set_ingredients_for_all()
