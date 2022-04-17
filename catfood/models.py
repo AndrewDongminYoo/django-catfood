@@ -62,11 +62,13 @@ class ListSelector(models.Model):
     base_url = models.URLField(verbose_name='상품 베이스 URL')
     title = models.TextField(verbose_name='상품명 선택자')
     product_path = models.TextField(verbose_name='상품 선택자')
-    ingredients_selector = models.TextField(verbose_name='상품 설명 선택자')
+    ingredients_selector = models.TextField(verbose_name='상품 원료 선택자')
+    analysis_selector = models.TextField(verbose_name='상품 성분 선택자')
 
 
 class Formula(models.Model):
     brand = models.ForeignKey(Brand, null=True, blank=True, on_delete=models.CASCADE, verbose_name='브랜드명')
     title = models.CharField(max_length=200, null=True, blank=True, verbose_name='상품명')
     ingredients = models.TextField(null=True, blank=True, verbose_name='사용된 원료')
+    analysis = models.TextField(null=True, blank=True, verbose_name='등록 성분량')
     product_url = models.URLField(verbose_name='상품 URL')

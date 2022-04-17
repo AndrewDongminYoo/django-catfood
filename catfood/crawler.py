@@ -215,6 +215,7 @@ def set_ingredients_for_all():
                 ingredient = ", ".join(ingredients)
                 ingredient = re.sub(r"\s+", " ", ingredient.strip())
                 ingredient = re.sub("(composition|ingredients?):? ?", "", ingredient, flags=re.IGNORECASE)
+                ingredient = re.sub(r"(\d),(\d{,2})", r"\1.\2", ingredient)
                 formula.ingredients = ingredient
                 print(formula.ingredients)
                 formula.save()
@@ -223,4 +224,4 @@ def set_ingredients_for_all():
 
 
 if __name__ == '__main__':
-    set_ingredients_for_all()
+    pass
