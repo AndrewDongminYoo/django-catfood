@@ -223,5 +223,59 @@ def set_ingredients_for_all():
                 print(f"[ERROR] {e}", formula.product_url)
 
 
+def set_analysis_for_all():
+    done_list = []
+    pass_list = [
+        Brand.objects.get(english_name="Gosbi"),
+        Brand.objects.get(english_name="RoyalCanin"),
+    ]
+    with webdriver.WebDriver() as driver:
+        driver.implicitly_wait(10)
+        driver.maximize_window()
+        for formula in Formula.objects.filter(Q(analysis=None) | Q(analysis="")).order_by("brand"):
+            try:
+                if formula.brand in pass_list:
+                    continue
+                driver.get(formula.product_url)
+                selector = ListSelector.objects.get(brand=formula.brand)
+                soup = BeautifulSoup(driver.page_source, "html.parser")
+                if formula.brand not in done_list:
+                    new_analysis_selector = input(f"{formula.brand} analysis path. ").strip()
+                    if new_analysis_selector:
+                        if new_analysis_selector == "pass":
+                            pass_list.append(formula.brand)
+                            continue
+                        elif new_analysis_selector.startswith("/"):
+                            analysis = new_analysis_selector[1:]
+                            analysis = re.sub(r"\s+", " ", analysis.strip())
+                            analysis = re.sub(r"\.{2,}", ".", analysis.strip())
+                            analysis = re.sub(r"(\d),(\d{,2})", r"\1.\2", analysis)
+                            analysis = re.sub("(analytical|additives?|constituents|guaranteed|analysis|nutrition):? ?", "", analysis, flags=re.IGNORECASE)
+                            formula.analysis = analysis
+                            formula.save()
+                            continue
+                        else:
+                            selector.analysis_selector = new_analysis_selector
+                            selector.save()
+                        done_list.append(formula.brand)
+
+                analysis = soup.select(selector.analysis_selector)
+                analysis = [ana.text.strip() for ana in analysis]
+                analysis = ", ".join(analysis)
+                analysis = re.sub(r"\s+", " ", analysis.strip())
+                analysis = re.sub(r"\.{2,}", ".", analysis.strip())
+                analysis = re.sub("(analytical|additives?|constituents|guaranteed|analysis|nutrition):? ?", "", analysis,
+                                  flags=re.IGNORECASE)
+                analysis = re.sub(r"(\d),(\d{,2})", r"\1.\2", analysis)
+                formula.analysis = analysis if analysis else None
+                if not analysis:
+                    done_list.remove(formula.brand)
+                else:
+                    print(formula.analysis)
+                    formula.save()
+            except Exception as e:
+                print(f"[ERROR] {e}", formula.product_url)
+
+
 if __name__ == '__main__':
-    pass
+    set_analysis_for_all()
