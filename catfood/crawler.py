@@ -303,5 +303,28 @@ def show_ingredients():
     print(sorted(sorted(ingredients_list, key=lambda x: ingredients_list[x], reverse=True)[:500]))
 
 
+def set_analysis():
+    for formula in Formula.objects.all():
+        analysis = formula.analysis.replace(", Cans Daily 1/2 To 3/43/4 To 1-1/21-1/2 To 2", "")
+        analysis = re.sub(r"% (\d+\.?\d*)", r"\1 %", analysis)
+        analysis = re.sub(r"(\(min\)|\(min\.\)|\(max\)|\(max\.\))", r"", analysis, flags=re.IGNORECASE)
+        analysis = re.sub(r",?(Min |Max |Minimum |Maximum )", r"", analysis)
+        analysis = re.sub(r"(, Not More Than|, Not Less Than|Minimum |Maximum )", r"", analysis, flags=re.IGNORECASE)
+        analysis = re.sub(r"( Not More Than| Not Less Than|Minimum|Maximum)", r"", analysis, flags=re.IGNORECASE)
+        analysis = re.sub(r" : ", r" ", analysis)
+        analysis = re.sub(r"(\d+\.?\d*) \d+\.?\d* % %", r"\1 %", analysis)
+        analysis = re.sub(r"(\d+\.?\d?) % ?--", r"\1 %", analysis)
+        analysis = re.sub(r"(\w+)(mg/kg|iu/kg)", r"\1 \2", analysis)
+        analysis = re.sub(r"([2-9])\.(\d{3})", r"\1,\2", analysis)
+        analysis = re.sub(r"(\d{2})\.(0{3})", r"\1,\2", analysis)
+        analysis = re.sub(r"(0{3})\.(\d{3})", r"\1,\2", analysis)
+        analysis = analysis.replace("Iu", "IU").replace("Kg", "kg").replace("Mg", "mg")
+        # print(re.findall(r"(\d+\.?,?\d* Kcal/kg)", analysis))
+        # print([a.strip() for a in analysis.split(", ") if a.strip()])
+        formula.analysis = analysis
+        formula.save()
+        print(analysis)
+
+
 if __name__ == '__main__':
-    pass
+    set_analysis()
