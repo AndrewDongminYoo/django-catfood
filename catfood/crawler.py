@@ -22,7 +22,7 @@ import django
 if 'setup' in dir(django):
     django.setup()
 
-from catfood.models import Brand, ListSelector, Formula
+from catfood.models import Brand, ListSelector, Formula, Ingredient
 
 
 def get_brand_list():
@@ -196,7 +196,7 @@ def set_ingredients_for_all():
                 driver.get(formula.product_url)
                 selector = ListSelector.objects.get(brand=formula.brand)
                 soup = BeautifulSoup(driver.page_source, "html.parser")
-                new_ingredients_selector = input().strip()
+                new_ingredients_selector = input(f"{formula.brand} selector:").strip()
                 if new_ingredients_selector == "delete":
                     formula.delete()
                     continue
@@ -232,9 +232,11 @@ def set_analysis_for_all():
     with webdriver.WebDriver() as driver:
         driver.implicitly_wait(10)
         driver.maximize_window()
-        for formula in Formula.objects.filter(Q(analysis=None) | Q(analysis="")).order_by("brand"):
+        for formula in Formula.objects.filter(Q(analysis=None) | Q(analysis="")).order_by("brand_id"):
             try:
                 if formula.brand in pass_list:
+                    formula.analysis = "No Data"
+                    formula.save()
                     continue
                 driver.get(formula.product_url)
                 selector = ListSelector.objects.get(brand=formula.brand)
@@ -244,13 +246,20 @@ def set_analysis_for_all():
                     if new_analysis_selector:
                         if new_analysis_selector == "pass":
                             pass_list.append(formula.brand)
+                            formula.analysis = "No Data"
+                            formula.save()
+                            continue
+                        elif new_analysis_selector == "delete":
+                            formula.delete()
                             continue
                         elif new_analysis_selector.startswith("/"):
                             analysis = new_analysis_selector[1:]
                             analysis = re.sub(r"\s+", " ", analysis.strip())
+                            analysis = re.sub(r"\.+ +", ".", analysis.strip())
                             analysis = re.sub(r"\.{2,}", ".", analysis.strip())
                             analysis = re.sub(r"(\d),(\d{,2})", r"\1.\2", analysis)
-                            analysis = re.sub("(analytical|additives?|constituents|guaranteed|analysis|nutrition):? ?", "", analysis, flags=re.IGNORECASE)
+                            analysis = re.sub("(analytical|additives?|constituents|guaranteed|analysis|nutrition)+:? ?",
+                                              "", analysis, flags=re.IGNORECASE)
                             formula.analysis = analysis
                             formula.save()
                             continue
@@ -264,7 +273,8 @@ def set_analysis_for_all():
                 analysis = ", ".join(analysis)
                 analysis = re.sub(r"\s+", " ", analysis.strip())
                 analysis = re.sub(r"\.{2,}", ".", analysis.strip())
-                analysis = re.sub("(analytical|additives?|constituents|guaranteed|analysis|nutrition):? ?", "", analysis,
+                analysis = re.sub("(analytical|additives?|constituents|guaranteed|analysis|nutrition):? ?", "",
+                                  analysis,
                                   flags=re.IGNORECASE)
                 analysis = re.sub(r"(\d),(\d{,2})", r"\1.\2", analysis)
                 formula.analysis = analysis if analysis else None
@@ -275,7 +285,23 @@ def set_analysis_for_all():
                     formula.save()
             except Exception as e:
                 print(f"[ERROR] {e}", formula.product_url)
+    print(pass_list)
+
+
+def show_ingredients():
+    ingredients_list = {}
+    for formula in Formula.objects.all():
+        ingredients = formula.ingredients
+        for ingredient in ingredients.split(", "):
+            ingredient = ingredient.strip()
+            ingredient = ingredient.capitalize()
+            ingredient = ingredient.replace(")", "").replace("(", "").replace(".", "")
+            if ingredient not in ingredients_list.keys():
+                ingredients_list[ingredient] = 1
+            else:
+                ingredients_list[ingredient] += 1
+    print(sorted(sorted(ingredients_list, key=lambda x: ingredients_list[x], reverse=True)[:500]))
 
 
 if __name__ == '__main__':
-    set_analysis_for_all()
+    pass

@@ -72,3 +72,8 @@ class Formula(models.Model):
     ingredients = models.TextField(null=True, blank=True, verbose_name='사용된 원료')
     analysis = models.TextField(null=True, blank=True, verbose_name='등록 성분량')
     product_url = models.URLField(verbose_name='상품 URL')
+    calorie = models.CharField(max_length=100, null=True, blank=True, verbose_name='칼로리')
+
+
+class Ingredient(models.Model):
+    name = models.CharField(max_length=100, verbose_name='원료명')
