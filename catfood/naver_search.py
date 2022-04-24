@@ -26,7 +26,8 @@ def naver_shopping_search():
         '10': "예정상품", '11': "예정상품", '12': "예정상품",
     }
     DISPLAY_COUNT = 100
-    brand_list = [brand for brand in Brand.objects.all() if NaverProduct.objects.filter(brand=brand).count() < 20]
+    brand_list = [brand for brand in Brand.objects.all() if NaverProduct.objects.filter(brand=brand).count() == 0]
+
     for brand in brand_list:
         start = 1
         while True:
@@ -39,26 +40,29 @@ def naver_shopping_search():
             response = requests.get(url, headers=headers)
             start += DISPLAY_COUNT
             body = response.json()
-            if start > 600 or not len(body["items"]):
+            if start > 600 or not len(body.get("items")):
                 break
             for data in body["items"]:
-                print(data)
                 if data['category3'] == "고양이 사료":
-                    naver_product = NaverProduct.objects.get_or_create(
-                        product_id=data['productId'],
-                    )[0]  # '11858083484'
                     _title = re.sub("</*b>", "", data['title'])
-                    naver_product.title = re.sub(r"[\[(]+\W+[])]+", "", _title)
-                    naver_product.link = data['link']
-                    naver_product.image_url = data['image']
-                    naver_product.low_price = data['lprice']  # '5690'
-                    naver_product.brand = brand if brand.korean_name in naver_product.title else None
-                    if data["mallName"]:
-                        naver_product.shopping_mall = ShoppingMall.objects.get_or_create(name=data['mallName'])[
-                            0]  # '네이버'
-                    naver_product.product_status = PRODUCT_TYPE[data['productType']]  # '1' - 가격 비교 상품
-                    naver_product.product_type = data['category4']  # '건식사료'
-                    naver_product.save()
+                    _title = re.sub(r"[\[(]+\W+[])]+", "", _title)
+                    if brand.korean_name in _title:
+                        print(data)
+                        naver_product = NaverProduct.objects.get_or_create(
+                            product_id=data['productId'],
+                        )[0]  # '11858083484'
+                        _title = re.sub("</*b>", "", data['title'])
+                        naver_product.title = re.sub(r"[\[(]+\W+[])]+", "", _title)
+                        naver_product.link = data['link']
+                        naver_product.image_url = data['image']
+                        naver_product.low_price = data['lprice']  # '5690'
+                        naver_product.brand = brand
+                        if data["mallName"]:
+                            naver_product.shopping_mall = ShoppingMall.objects.get_or_create(name=data['mallName'])[
+                                0]  # '네이버'
+                        naver_product.product_status = PRODUCT_TYPE[data['productType']]  # '1' - 가격 비교 상품
+                        naver_product.product_type = data['category4']  # '건식사료'
+                        naver_product.save()
             print(start)
 
 
@@ -108,5 +112,16 @@ def find_brand():
             print(product.title, False)
 
 
+def main():
+    Brand.objects.all().update(is_available=True)
+    for brand in Brand.objects.all():
+        count = NaverProduct.objects.filter(brand=brand).count()
+        if count == 0:
+            brand.is_available = False
+            brand.save()
+            print(f"'{brand}',")
+
+
 if __name__ == '__main__':
-    find_brand()
+    naver_shopping_search()
+    main()

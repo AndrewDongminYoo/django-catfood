@@ -22,7 +22,7 @@ import django
 if 'setup' in dir(django):
     django.setup()
 
-from catfood.models import Brand, ListSelector, Formula, Ingredient
+from catfood.models import Brand, ListSelector, Formula, Ingredient, NaverProduct
 
 
 def get_brand_list():
@@ -326,5 +326,41 @@ def set_analysis():
         print(analysis)
 
 
+def set_analysis1():
+    analysis_list = []
+    exclude_list1 = [
+        '®', '¼', '¼-', '¼:', '½', '½:', '¾', '—', '†', '•', '⅓', '⅓:', '⅔', '⅔:', '⅜', '⅜:', '⅝', '⅝+', '⅝:' ';', '<5', '=',
+    ]
+    for formula in Formula.objects.all():
+        analysis = formula.analysis
+        analysis = re.sub(r"[A-Z][0-9]{3,}", "", analysis)
+        analysis = re.sub(r"\*+", "", analysis)
+        analysis = re.sub(r"(\.,|,,)", ",", analysis)
+        analysis = re.sub(r"[-—+]+", " ", analysis)
+        analysis = re.compile("|".join(exclude_list1)).sub("", analysis)
+        analysis = re.sub(r"\s+", " ", analysis)
+        analysis = re.sub(r" , ", ", ", analysis)
+        analysis = analysis\
+            .replace("Ω", "Omega")\
+            .replace("iu/kg", "IU/kg")\
+            .replace("Zink", "Zinc")\
+            .replace("Me/", "ME/")\
+            .replace("Max.", "").strip()
+
+        # formula.analysis = analysis
+        # formula.save()
+        for word in analysis.split():
+            while word.startswith("(") or word.startswith("["):
+                word = word[1:]
+            while word.endswith(",") or word.endswith(":") or word.endswith(".") or word.endswith(")") or word.endswith(";"):
+                word = word[:-1]
+            if word.strip() not in analysis_list:
+                analysis_list.append(word.strip())
+    print(sorted(analysis_list), len(analysis_list))
+
+
+
+
+
 if __name__ == '__main__':
-    set_analysis()
+    main()
