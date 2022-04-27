@@ -329,7 +329,8 @@ def set_analysis():
 def set_analysis1():
     analysis_list = []
     exclude_list1 = [
-        '®', '¼', '¼-', '¼:', '½', '½:', '¾', '—', '†', '•', '⅓', '⅓:', '⅔', '⅔:', '⅜', '⅜:', '⅝', '⅝+', '⅝:' ';', '<5', '=',
+        '®', '¼', '¼-', '¼:', '½', '½:', '¾', '—', '†', '•', '⅓',
+        '⅓:', '⅔', '⅔:', '⅜', '⅜:', '⅝', '⅝+', '⅝:' ';', '<5', '=',
     ]
     for formula in Formula.objects.all():
         analysis = formula.analysis
@@ -359,8 +360,24 @@ def set_analysis1():
     print(sorted(analysis_list), len(analysis_list))
 
 
-
+def set_calorie():
+    with webdriver.WebDriver() as driver:
+        for formula in Formula.objects.filter(calorie=None):
+            driver.get(formula.product_url)
+            new_calorie = input(f"{formula.title} calorie: ").strip()
+            if new_calorie == "delete":
+                formula.delete()
+            elif new_calorie == "rename":
+                new_name = input(f"{formula.title} new name: ").strip()
+                formula.title = new_name
+                formula.save()
+            elif new_calorie:
+                formula.calorie = re.sub(r"\s+", " ", new_calorie)
+                formula.save()
+            else:
+                formula.calorie = "No Data"
+                formula.save()
 
 
 if __name__ == '__main__':
-    main()
+    set_calorie()
