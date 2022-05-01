@@ -361,8 +361,13 @@ def set_analysis1():
 
 
 def set_calorie():
+    pass_list = []
     with webdriver.WebDriver() as driver:
-        for formula in Formula.objects.filter(calorie=None):
+        for formula in Formula.objects.filter(calorie=None).order_by("brand_id"):
+            if formula.brand in pass_list:
+                formula.calorie = "No Data"
+                formula.save()
+                continue
             driver.get(formula.product_url)
             new_calorie = input(f"{formula.title} calorie: ").strip()
             if new_calorie == "delete":
@@ -371,6 +376,11 @@ def set_calorie():
                 new_name = input(f"{formula.title} new name: ").strip()
                 formula.title = new_name
                 formula.save()
+            elif new_calorie == "pass":
+                pass_list.append(formula.brand)
+                formula.calorie = "No Data"
+                formula.save()
+                continue
             elif new_calorie:
                 formula.calorie = re.sub(r"\s+", " ", new_calorie)
                 formula.save()
