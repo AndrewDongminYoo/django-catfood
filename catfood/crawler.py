@@ -4,10 +4,8 @@ import re
 import sys
 import time
 
-import requests
 from bs4 import BeautifulSoup
 from django.db.models import Q
-from requests import Response
 from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.chrome import webdriver
 from selenium.webdriver.common.by import By
@@ -22,7 +20,7 @@ import django
 if 'setup' in dir(django):
     django.setup()
 
-from catfood.models import Brand, ListSelector, Formula, Ingredient, NaverProduct
+from catfood.models import Brand, ListSelector, Formula
 
 
 def get_brand_list():
@@ -225,10 +223,7 @@ def set_ingredients_for_all():
 
 def set_analysis_for_all():
     done_list = []
-    pass_list = [
-        Brand.objects.get(english_name="Gosbi"),
-        Brand.objects.get(english_name="RoyalCanin"),
-    ]
+    pass_list = []
     with webdriver.WebDriver() as driver:
         driver.implicitly_wait(10)
         driver.maximize_window()
@@ -361,12 +356,45 @@ def set_analysis1():
 
 
 def set_calorie():
-    pass_list = []
-    with webdriver.WebDriver() as driver:
-        for formula in Formula.objects.filter(calorie=None).order_by("brand_id"):
-            if formula.brand in pass_list:
-                formula.calorie = "No Data"
-                formula.save()
+    def save_calorie(product: Formula, calorie=None):
+        if not calorie:
+            product.calorie = "No data"
+            return product.save()
+        calorie = re.sub(r"\s+", " ", calorie.strip())
+        calorie = re.sub(r"(\d)[,.]+(\d{3})", r"\1\2", calorie)
+        calorie = re.sub(r"(\d{2,}),(\d{1,2})", r"\1.\2", calorie)
+        calorie = re.sub(r"ME Cal/Tub ([0-9.]+)", r"\1 kcal/tub", calorie)
+        calorie = re.sub(r"ME Cal/can ([0-9.]+)", r"\1 kcal/can", calorie)
+        calorie = re.sub(r"ME\(Calculated\) (\d+)", r"\1 kcal/kg", calorie)
+        calorie = re.sub(r"kcal/(\d+)g can", r"kcal/can(\1)", calorie)
+        calorie = re.sub(r"(\d+) Cal/100g", r"\1 kcal/100g", calorie)
+        calorie = re.sub(r"Metabolic energy \(Kcal/100g\): (\d+)", r"\1 kcal/100g", calorie)
+        calorie = re.sub(r"Metabolisable Energy (\d+) Kcal / 100 g", r"\1 kcal/100g", calorie)
+        calorie = re.sub(r"Kcal/kg", r"kcal/kg", calorie)
+        product.calorie = calorie\
+            .replace(" per ", "/")\
+            .replace(" Per ", "/")\
+            .replace(" / ", "/")\
+            .replace("100 g", "100g")\
+            .replace("Kc", "kc")\
+            .replace("als", "al")\
+            .replace("G", "g")\
+            .replace("alories", "al")\
+            .replace("ilogram", "g")\
+            .replace(" ME", "")\
+            .replace(" Energy", "")\
+            .replace(" Metabolisable", "")\
+            .replace(" me", "")
+        return product.save()
+
+    options = webdriver.Options()
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    with webdriver.WebDriver(options=options) as driver:
+        driver.maximize_window()
+        for formula in Formula.objects.filter(calorie="").order_by("brand_id"):
+            if formula.calorie:
                 continue
             driver.get(formula.product_url)
             new_calorie = input(f"{formula.title} calorie: ").strip()
@@ -377,17 +405,14 @@ def set_calorie():
                 formula.title = new_name
                 formula.save()
             elif new_calorie == "pass":
-                pass_list.append(formula.brand)
-                formula.calorie = "No Data"
-                formula.save()
-                continue
+                save_calorie(formula)
+                Formula.objects.filter(brand=formula.brand, calorie=None).update(calorie="No Data")
             elif new_calorie:
-                formula.calorie = re.sub(r"\s+", " ", new_calorie)
+                save_calorie(formula, new_calorie)
                 formula.save()
             else:
-                formula.calorie = "No Data"
-                formula.save()
+                save_calorie(formula)
 
 
 if __name__ == '__main__':
-    set_calorie()
+    set_analysis_for_all()
