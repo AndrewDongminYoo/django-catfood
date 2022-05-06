@@ -414,5 +414,35 @@ def set_calorie():
                 save_calorie(formula)
 
 
+def set_metabolizable_energy():
+    for formula in Formula.objects.exclude(calorie="No Data").order_by("brand_id"):
+        calorie = formula.calorie.replace('KCAL/Kg', 'kcal/kg').replace('kcal/Kg', 'kcal/kg')
+        num1, cal, num2, kg = re.compile(r"([0-9.]+) (kcal|MJ)/([0-9.]*)(k?g|oz|can|cup|tub|lb)").search(calorie).groups()
+        num1 = float(num1)
+        if cal == "MJ":
+            num1 *= 4184
+            cal = "kcal"
+        num2 = float(num2) if num2.isdigit() else 1.0
+        if kg == "kg":
+            num2 *= 1
+        else:
+            if kg == "oz":
+                num2 *= 0.0283495
+            elif kg == "can":
+                num2 *= 0.250
+            elif kg == "cup":
+                num2 *= 0.250
+            elif kg == "tub":
+                num2 *= 0.080
+            elif kg == "lb":
+                num2 *= 0.453592
+            elif kg == "g":
+                num2 *= 0.001
+            kg = "kg"
+        formula.calorie = calorie
+        formula.energy = num1 / num2
+        formula.save()
+
+
 if __name__ == '__main__':
-    set_analysis_for_all()
+    set_metabolizable_energy()
