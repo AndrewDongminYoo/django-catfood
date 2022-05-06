@@ -75,6 +75,7 @@ class Formula(models.Model):
     calorie = models.CharField(max_length=100, null=True, blank=True, verbose_name='칼로리')
     energy = models.FloatField(null=True, blank=True, verbose_name='에너지')
     protein = models.FloatField(null=True, blank=True, verbose_name='단백질')
+    fat = models.FloatField(null=True, blank=True, verbose_name='지방')
 
 
 class Ingredient(models.Model):

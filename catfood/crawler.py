@@ -415,7 +415,7 @@ def set_calorie():
 
 
 def set_metabolizable_energy():
-    for formula in Formula.objects.exclude(calorie="No Data").order_by("brand_id"):
+    for formula in Formula.objects.exclude(calorie="No Data").filter(energy=None).order_by("brand_id"):
         calorie = formula.calorie.replace('KCAL/Kg', 'kcal/kg').replace('kcal/Kg', 'kcal/kg')
         num1, cal, num2, kg = re.compile(r"([0-9.]+) (kcal|MJ)/([0-9.]*)(k?g|oz|can|cup|tub|lb)").search(calorie).groups()
         num1 = float(num1)
@@ -454,7 +454,7 @@ def extract_protein():
         r"Crude Protein \(([0-9.]+) \%\)",
         r"Crude Protein [0-9.]+ ([0-9.]+) % [0-9.]+ %"
     ]
-    for formula in Formula.objects.exclude(analysis="No Data"):
+    for formula in Formula.objects.exclude(analysis="No Data").filter(protein=None):
         formula.analysis = formula.analysis\
             .replace("’", ".")\
             .replace(";", "")\
@@ -474,5 +474,33 @@ def extract_protein():
         formula.save()
 
 
+def main():
+    regex = [
+        r"(조?지방 ([0-9.]+)",
+        r"Fat Content:? ([0-9.]+) \%",
+        r"Fats?:? ([0-9.]+) \%",
+        r"Crude Fat Min\.([0-9.]+) \%",
+        r"Crude Fats? And Oils? ([0-9.]+) \%",
+        r"Crude Fats? & Oils? ([0-9.]+) \%",
+        r"Crude Oils? And Fats? ([0-9.]+) \%",
+        r"Crude Oils? & Fats? ([0-9.]+) \%",
+        r"Fettgehalt:? ([0-9.]+) %",
+        r"Fats \(([0-9.]+) \%\)",
+        r"Grasa Bruta:? ([0-9.]+) \%",
+        r"Crude Fat\, ([0-9.]+) \%",
+        r"Crude Fat\, Min\.([0-9.]+) \%",
+        r"Fat G \(crude\) [0-9.]+ ([0-9.]+)",
+        r"Fat\, Crude ([0-9.]+) [0-9.]+ \% G",
+        r"Aceites Y Grasas Brutos ([0-9.]+) \%",
+        r"Crude Fat \(not Less Than\) ([0-9.]+) \%)"
+    ]
+    for formula in Formula.objects.exclude(analysis="No Data").filter(fat=None).order_by("brand_id"):
+        fat = re.search("|".join(regex), formula.analysis)
+        fat = re.findall(r"[0-9]+[0-9.]*", fat.group(1)) if fat else None
+        if fat:
+            formula.fat = float(fat[0])
+            formula.save()
+
+
 if __name__ == '__main__':
-    set_metabolizable_energy()
+    main()
