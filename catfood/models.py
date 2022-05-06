@@ -73,7 +73,8 @@ class Formula(models.Model):
     analysis = models.TextField(null=True, blank=True, verbose_name='등록 성분량')
     product_url = models.URLField(verbose_name='상품 URL')
     calorie = models.CharField(max_length=100, null=True, blank=True, verbose_name='칼로리')
-    energy = models.IntegerField(null=True, blank=True, verbose_name='에너지')
+    energy = models.FloatField(null=True, blank=True, verbose_name='에너지')
+    protein = models.FloatField(null=True, blank=True, verbose_name='단백질')
 
 
 class Ingredient(models.Model):

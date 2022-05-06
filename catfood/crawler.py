@@ -420,7 +420,7 @@ def set_metabolizable_energy():
         num1, cal, num2, kg = re.compile(r"([0-9.]+) (kcal|MJ)/([0-9.]*)(k?g|oz|can|cup|tub|lb)").search(calorie).groups()
         num1 = float(num1)
         if cal == "MJ":
-            num1 *= 4184
+            num1 *= 238.85
             cal = "kcal"
         num2 = float(num2) if num2.isdigit() else 1.0
         if kg == "kg":
@@ -440,7 +440,37 @@ def set_metabolizable_energy():
                 num2 *= 0.001
             kg = "kg"
         formula.calorie = calorie
-        formula.energy = num1 / num2
+        formula.energy = round(num1 / num2, 2)
+        formula.save()
+
+
+def extract_protein():
+    protein_reg = [
+        r"(?:crude |Crude |Roh)?P?p?rote?ie?ns?:?,? (?:Min.)?([0-9.]+) %",
+        r"조?단백질? ([0-9.]+) %?",
+        r"Protein,? (?:G \(crude\)|Crude) [0-9.]+ ([0-9.]+)",
+        r"Proteina Bruta ([0-9.]+) %",
+        r"Crude Protein \(not Less Than\) ([0-9.]+) %",
+        r"Crude Protein \(([0-9.]+) \%\)",
+        r"Crude Protein [0-9.]+ ([0-9.]+) % [0-9.]+ %"
+    ]
+    for formula in Formula.objects.exclude(analysis="No Data"):
+        formula.analysis = formula.analysis\
+            .replace("’", ".")\
+            .replace(";", "")\
+            .replace("Á", "A")\
+            .replace("ä", "a")\
+            .replace("é", "e")\
+            .replace("í", "i")\
+            .replace("ï", "i")\
+            .replace("í", "i")\
+            .replace("ó", "o")\
+            .replace("Ω", "omega")\
+            .replace("<5 <5", "5")\
+            .replace("0^5", "00000")
+        protein = re.search("|".join(protein_reg), formula.analysis)
+        if protein:
+            formula.protein = [x for x in protein.groups() if x][0]
         formula.save()
 
 
