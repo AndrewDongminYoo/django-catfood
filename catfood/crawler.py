@@ -474,7 +474,7 @@ def extract_protein():
         formula.save()
 
 
-def main():
+def extract_fat():
     regex = [
         r"(조?지방 ([0-9.]+)",
         r"Fat Content:? ([0-9.]+) \%",
@@ -502,5 +502,138 @@ def main():
             formula.save()
 
 
+def extract_fiber():
+    regexes = [
+        r"Crude Fiber \(not More Than\) ([0-9\.]+) \%",
+        r"(?:Crude)? Fibres?,?:? ([0-9\.]+) ?\%",
+        r"(?:Crude)? Fibers?,?:? ([0-9\.]+) ?\%",
+        r"Crude Fibre\, Max\.([0-9\.]+) \%",
+        r"Crude Fibre \% ([0-9\.]+)",
+        r"Fiber ([0-9\.]+) [0-9\.]+ \%",
+        r"Fiber G \(crude\) [0-9\.]+ ([0-9\.]+)",
+        r"Crude Fiber [0-9.]+ ([0-9\.]+) \%",
+        r"Crude Fiber\,? Max\.([0-9\.]+) \%",
+        r"Crude Fibers? \(([0-9\.]+) \%\)",
+        r"Crude Cellulose ([0-9\.]+) \%",
+        r"Crude Ber ([0-9\.]+) \%",
+        r"Rohfaser\:? ([0-9\.]+) \%",
+        r"Fibras? Brutas?\:? ([0-9\.]+) \%",
+        r"조?섬유 ([0-9\.]+) ?\%?",
+    ]
+    for formula in Formula.objects.exclude(analysis="No Data").filter(fiber=None):
+        fiber = re.findall("|".join(regexes), formula.analysis)
+        fiber = fiber[0] if fiber else None
+        fiber = [x for x in fiber if x] if fiber else None
+        formula.fiber = float(fiber[0]) if fiber else None
+        formula.save()
+
+
+def extract_ash():
+    regexes = [
+        r"(?:Crude )?Ash,? ([0-9\.]+) ?\%",
+        r"Minerals\/crude Ash ([0-9\.]+) \%",
+        r"Rohasche ([0-9\.]+) \%",
+        r"Crude Ash\: ([0-9\.]+) \%",
+        r"Ash Max\.([0-9\.]+) \%",
+        r"조?회분 ([0-9\.]+)",
+        r"Ash\, Max\.([0-9\.]+) \%",
+        r"Crude Ash \(([0-9\.]+) \%\)",
+        r"Crude Ash \% ([0-9\.]+)",
+        r"Ash ([0-9\.]+) [0-9\.]+ \% G",
+        r"ash ([0-9\.]+) \%",
+        r"Ceniza Bruta ([0-9\.]+) \%",
+    ]
+    for formula in Formula.objects.exclude(analysis="No Data").filter(ash=None):
+        ash = re.findall("|".join(regexes), formula.analysis)
+        if ash:
+            formula.ash = float([a for a in ash[0] if a][0])
+            formula.save()
+
+
+def extract_moisture():
+    regexes = [
+        r"Moisture ([0-9\.]+) ?\%",
+        r"Feuchtigkeit ([0-9\.]+) \%",
+        r"Moisture\,?\:? ([0-9\.]+) \%",
+        r"수분 ([0-9\.]+) \% 이하",
+        r"Moisture Max\.([0-9\.]+) \%",
+        r"Moisture\, Max\.([0-9\.]+) \%",
+        r"Moisture ([0-9\.]+)",
+        r"Water ?G? ([0-9\.]+)",
+        r"Moisture \(([0-9\.]+) \%\)",
+    ]
+    for formula in Formula.objects.exclude(analysis="No Data").filter(moisture=None):
+        moist = re.findall("|".join(regexes), formula.analysis)
+        if moist:
+            formula.moisture = float([a for a in moist[0] if a][0])
+            formula.save()
+
+
+def extract_carb():
+    regexes = [
+        r"Carbohydrates?:? ([0-9\.]+)",
+        r"NFE ([0-9\.]+) \%",
+        r"Carbohydrate G \(nfe\) [0-9\.]+ ([0-9\.]+)",
+        r"Carbs ([0-9\.]+)",
+        r"Carbohydrates \(calc\.\) ([0-9\.]+) \%",
+        r"Carbohydrates \(([0-9\.]+) \%\)",
+    ]
+    for formula in Formula.objects.exclude(analysis="No Data").filter(carbohydrate=None):
+        carbohydrate = re.findall("|".join(regexes), formula.analysis)
+        if carbohydrate:
+            formula.carbohydrate = float([a for a in carbohydrate[0] if a][0])
+            formula.save()
+    for formula in Formula.objects.exclude(analysis="No Data").filter(
+        carbohydrate=None,
+        fat__isnull=False,
+        protein__isnull=False,
+        moisture__isnull=False,
+        ash__isnull=False,
+        fiber__isnull=False,
+    ):
+        carbo = (100 - formula.fat - formula.protein - formula.moisture - formula.ash - formula.fiber)
+        formula.carbohydrate = round(carbo, 2) if carbo > 0 else 0
+        print(formula.carbohydrate)
+        formula.save()
+
+
+def extract_calcium():
+    regexes = [
+        r"Calcium:?,? ([0-9\.]+) ?\%?",
+        r"Calcium \(ca\) ([0-9\.]+) \%",
+        r"Calcium\, Min\.([0-9\.]+) \%",
+        r"Calcium\, ([0-9\.]+) \%",
+        r"Calcio ([0-9\.]+) \%",
+        r"Calcium G [0-9\.]+ ?([0-9\.]+)",
+        r"Calcium \d\.\d\d(\d\.\d\d)",
+        r"Calcium \(not Less Than\) ([0-9\.]+) \%",
+        r"Calcium \(mg\/kg\) ([0-9\.]+)",
+        r"Calcium \(([0-9\.]+) \%\)",
+        r"Calcium Min\.([0-9\.]+) \%",
+    ]
+    for formula in Formula.objects.exclude(analysis="No Data").filter(calcium=None):
+        calcium = re.findall("|".join(regexes), formula.analysis)
+        if calcium:
+            formula.calcium = float([a for a in calcium[0] if a][0])
+            formula.save()
+    regexes = [
+        r"Phosphoro?us:?,? ([0-9\.]+) ?\%?",
+        r"Phosphorus \(ca\) ([0-9\.]+) \%",
+        r"Phosphorus\, Min\.([0-9\.]+) \%",
+        r"Phosphorus\, ([0-9\.]+) \%",
+        r"Phosphor ([0-9\.]+) \%",
+        r"Phosphorus G [0-9\.]+ ?([0-9\.]+)",
+        r"Phosphorus \(not Less Than\) ([0-9\.]+) \%",
+        r"Phosphorus \(mg\/kg\) ([0-9\.]+)",
+        r"Phosphorus \(([0-9\.]+) \%\)",
+        r"Phosphorus Min\.([0-9\.]+) \%",
+    ]
+    for formula in Formula.objects.exclude(analysis="No Data").filter(phosphorus=None):
+        phosphorus = re.findall("|".join(regexes), formula.analysis)
+        if phosphorus:
+            formula.phosphorus = float([a for a in phosphorus[0] if a][0])
+            formula.save()
+
+
 if __name__ == '__main__':
-    main()
+    extract_calcium()

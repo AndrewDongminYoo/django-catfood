@@ -76,6 +76,12 @@ class Formula(models.Model):
     energy = models.FloatField(null=True, blank=True, verbose_name='에너지')
     protein = models.FloatField(null=True, blank=True, verbose_name='단백질')
     fat = models.FloatField(null=True, blank=True, verbose_name='지방')
+    fiber = models.FloatField(null=True, blank=True, verbose_name='섬유소')
+    moisture = models.FloatField(null=True, blank=True, verbose_name='수분')
+    ash = models.FloatField(null=True, blank=True, verbose_name='회분')
+    carbohydrate = models.FloatField(null=True, blank=True, verbose_name='탄수화물')
+    calcium = models.FloatField(null=True, blank=True, verbose_name='칼슘')
+    phosphorus = models.FloatField(null=True, blank=True, verbose_name='인')
 
 
 class Ingredient(models.Model):
